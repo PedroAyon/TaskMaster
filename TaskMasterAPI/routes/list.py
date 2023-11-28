@@ -5,7 +5,7 @@ from core.models import db, Board, Member, BoardList
 from routes.auth import token_required
 
 
-@app.route('/board_list/all', methods=['GET'])
+@app.route('/list/all', methods=['GET'])
 @token_required
 def get_board_lists(current_user):
     data = request.args
@@ -31,7 +31,7 @@ def get_board_lists(current_user):
     return jsonify(board_list_details)
 
 
-@app.route('/board_list', methods=['DELETE'])
+@app.route('/list', methods=['DELETE'])
 @token_required
 def delete_board_list(current_user):
     data = request.form
@@ -63,7 +63,7 @@ def delete_board_list(current_user):
     return jsonify({'message': 'Board list deleted successfully'}), 200
 
 
-@app.route('/board_list', methods=['UPDATE'])
+@app.route('/list', methods=['UPDATE'])
 @token_required
 def update_board_list_name(current_user):
     data = request.form
@@ -94,3 +94,37 @@ def update_board_list_name(current_user):
     db.session.commit()
 
     return jsonify({'message': 'Board list name updated successfully'}), 200
+
+
+@app.route('/list', methods=['POST'])
+@token_required
+def create_list(current_user):
+    data = request.form
+    workspace_id = data.get('workspace_id')
+    board_id = data.get('board_id')
+    board_list_name = data.get('board_list_name')
+
+    if not workspace_id or not board_id or not board_list_name:
+        return make_response(
+            'Bad request',
+            400,
+            {'WWW-Authenticate': 'Basic realm ="workspace_id, board_id, and board_list_name are required !!"'}
+        )
+
+    # Check if the current user is a member of the specified workspace
+    workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace_id).first()
+    if not workspace_member_check:
+        return jsonify({'message': 'You do not have permission to create a board list in this workspace.'}), 403
+
+    # Check if the board exists in the specified workspace
+    existing_board = Board.query.filter_by(id=board_id, workspace_id=workspace_id).first()
+    if not existing_board:
+        return jsonify({'message': 'Board does not exist in the specified workspace.'}), 404
+
+    # Create a new board list
+    new_board_list = BoardList(board_id=board_id, name=board_list_name)
+
+    db.session.add(new_board_list)
+    db.session.commit()
+
+    return jsonify({'message': 'Board list created successfully', 'board_list_id': new_board_list.id}), 201
