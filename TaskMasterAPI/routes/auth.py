@@ -1,11 +1,11 @@
-from flask import Flask, jsonify, request, make_response
-from werkzeug.security import check_password_hash, generate_password_hash
 import jwt
+from flask import jsonify, request, make_response
+from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timedelta
 from functools import wraps
-from models.user import User
-from database import db
+
 from core import app
+from core.models import User, db
 
 
 # decorator for verifying the JWT

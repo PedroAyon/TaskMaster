@@ -1,9 +1,8 @@
-from flask import Flask, jsonify, request, make_response
-from database import db
-from models.board import Board
-from models.member import Member
-from routes.auth import token_required
+from flask import jsonify, request, make_response
+
 from core import app
+from core.models import db, Board, Member
+from routes.auth import token_required
 
 
 @app.route('/board', methods=['POST'])

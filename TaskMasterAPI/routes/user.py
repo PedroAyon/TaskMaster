@@ -1,10 +1,11 @@
-from flask import Flask, jsonify
-from models.user import User
-from routes.auth import token_required
+from flask import jsonify
+
 from core import app
+from core.models import User
+from routes.auth import token_required
 
 
-@app.route('/users', methods=['GET'])
+@app.route('/user', methods=['GET'])
 @token_required
 def get_users(current_user):
     users = User.query.all()

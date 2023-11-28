@@ -1,10 +1,8 @@
-from flask import Flask, jsonify, request, make_response
-from models.member import Member
-from models.user import User
-from models.workspace import Workspace
-from routes.auth import token_required
-from database import db
+from flask import jsonify, request, make_response
+
 from core import app
+from core.models import db, Member, Workspace, User
+from routes.auth import token_required
 
 
 @app.route('/workspace', methods=['GET'])
