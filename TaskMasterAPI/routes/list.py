@@ -1,4 +1,4 @@
-from flask import jsonify, request, make_response
+from flask import jsonify, request
 
 from core import app
 from core.models import db, Board, Member, BoardList
@@ -12,11 +12,7 @@ def get_board_lists(current_user):
     workspace_id = data.get('workspace_id')
 
     if not workspace_id:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="workspace_id is required !!"'}
-        )
+        return jsonify({'message': 'workspace_id is required !'}), 400
 
     workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace_id).first()
     if not workspace_member_check:
@@ -39,11 +35,7 @@ def delete_board_list(current_user):
     board_list_id = data.get('board_list_id')
 
     if not workspace_id or not board_list_id:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="workspace_id and board_list_id are required !!"'}
-        )
+        return jsonify({'message': 'workspace_id and board_list_id are required !'}), 400
 
     # Check if the current user is a member of the specified workspace
     workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace_id).first()
@@ -63,7 +55,7 @@ def delete_board_list(current_user):
     return jsonify({'message': 'Board list deleted successfully'}), 200
 
 
-@app.route('/list', methods=['UPDATE'])
+@app.route('/list', methods=['PUT'])
 @token_required
 def update_board_list_name(current_user):
     data = request.form
@@ -72,11 +64,7 @@ def update_board_list_name(current_user):
     new_board_list_name = data.get('new_board_list_name')
 
     if not workspace_id or not board_list_id or not new_board_list_name:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="workspace_id, board_list_id, and new_board_list_name are required !!"'}
-        )
+        return jsonify({'message': 'workspace_id, board_list_id, and new_board_list_name are required !'}), 400
 
     # Check if the current user is a member of the specified workspace
     workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace_id).first()
@@ -105,11 +93,7 @@ def create_list(current_user):
     board_list_name = data.get('board_list_name')
 
     if not workspace_id or not board_id or not board_list_name:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="workspace_id, board_id, and board_list_name are required !!"'}
-        )
+        return jsonify({'message': 'workspace_id, board_id, and board_list_name are required !'}), 400
 
     # Check if the current user is a member of the specified workspace
     workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace_id).first()

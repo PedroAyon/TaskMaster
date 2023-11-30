@@ -1,7 +1,7 @@
-from flask import jsonify, request, make_response
+from flask import jsonify, request
 
 from core import app
-from core.models import db, AssignedTasks, Task, User
+from core.models import db, AssignedTasks, Task, User, Member
 from routes.auth import token_required
 
 
@@ -12,11 +12,7 @@ def get_members_assigned_to_task(current_user):
     task_id = data.get('task_id')
 
     if not task_id:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="task_id is required !!"'}
-        )
+        return jsonify({'message': 'task_id is required !'}), 400
 
     assigned_members = AssignedTasks.query.filter_by(task_id=task_id).all()
 
@@ -25,7 +21,7 @@ def get_members_assigned_to_task(current_user):
             'user_id': assigned_member.user_id,
             'workspace_id': assigned_member.workspace_id,
             'name': User.query.filter_by(id=assigned_member.user_id).first().name,
-            'email': User.query.filter_by(id=assigned_member.user_id).first().email
+            'email': User.query.filter_by(id=assigned_member.user_id).first().email,
         }
         for assigned_member in assigned_members]
 
@@ -40,11 +36,7 @@ def get_tasks_assigned_to_member(current_user):
     workspace_id = data.get('workspace_id')
 
     if not user_id or not workspace_id:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="user_id and workspace_id are required !!"'}
-        )
+        return jsonify({'message': 'user_id and workspace_id are required !'}), 400
 
     assigned_tasks = AssignedTasks.query.filter_by(user_id=user_id, workspace_id=workspace_id).all()
 
@@ -67,11 +59,7 @@ def assign_task_to_member(current_user):
     task_id = data.get('task_id')
 
     if not user_id or not workspace_id or not task_id:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="user_id, workspace_id, and task_id are required !!"'}
-        )
+        return jsonify({'message': 'user_id, workspace_id, and task_id are required !'}), 400
 
     existing_assignment = AssignedTasks.query.filter_by(user_id=user_id, workspace_id=workspace_id,
                                                         task_id=task_id).first()
@@ -94,11 +82,7 @@ def absolve_task_to_member(current_user):
     task_id = data.get('task_id')
 
     if not user_id or not workspace_id or not task_id:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="user_id, workspace_id, and task_id are required !!"'}
-        )
+        return jsonify({'message': 'user_id, workspace_id, and task_id are required !'}), 400
 
     existing_assignment = AssignedTasks.query.filter_by(user_id=user_id, workspace_id=workspace_id,
                                                         task_id=task_id).first()

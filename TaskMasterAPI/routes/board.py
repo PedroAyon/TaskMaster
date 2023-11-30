@@ -1,7 +1,7 @@
-from flask import jsonify, request, make_response
+from flask import jsonify, request
 
 from core import app
-from core.models import db, Board, Member
+from core.models import db, Board, Member, Workspace
 from routes.auth import token_required
 
 
@@ -13,11 +13,7 @@ def create_board(current_user):
     board_name = data.get('board_name')
 
     if not workspace_id or not board_name:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="workspace_id and board_name are required !!"'}
-        )
+        return jsonify({'message': 'workspace_id and board_name are required !'}), 400
 
     # Check if the current user is a member of the specified workspace
     workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace_id).first()
@@ -41,11 +37,7 @@ def delete_board(current_user):
     board_id = data.get('board_id')
 
     if not workspace_id or not board_id:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="workspace_id and board_id are required !!"'}
-        )
+        return jsonify({'message': 'workspace_id and board_id are required !'}), 400
 
     # Check if the current user is a member of the specified workspace
     workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace_id).first()
@@ -62,18 +54,14 @@ def delete_board(current_user):
     return jsonify({'message': 'Board deleted successfully'}), 200
 
 
-@app.route('/board', methods=['GET'])
+@app.route('/board/all', methods=['GET'])
 @token_required
 def get_boards(current_user):
     data = request.args
     workspace_id = data.get('workspace_id')
 
     if not workspace_id:
-        return make_response(
-            'Bad request',
-            400,
-            {'WWW-Authenticate': 'Basic realm ="workspace_id is required !!"'}
-        )
+        return jsonify({'message': 'workspace_id is required !'}), 400
 
     # Check if the current user is a member of the specified workspace
     workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace_id).first()
@@ -85,5 +73,30 @@ def get_boards(current_user):
 
     # Create a list of board details
     board_list = [{'board_id': board.id, 'board_name': board.name} for board in boards]
+
+    return jsonify(board_list)
+
+
+@app.route('/board', methods=['GET'])
+@token_required
+def get_board(current_user):
+    data = request.args
+    board_id = data.get('board_id')
+
+    if not board_id:
+        return jsonify({'message': 'board_id is required !'}), 400
+
+    # Check if the current user is a member of the specified workspace
+    board = Board.query.filter_by(id=board_id).first()
+    if not board:
+        return jsonify({'message': 'Board not found.'}), 404
+
+    workspace = Workspace.query.filter_by(id=board.workspace_id)
+    workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace.id).first()
+    if not workspace_member_check:
+        return jsonify({'message': 'You do not have permission to get boards in this workspace.'}), 403
+
+    # Create a list of board details
+    board_list = {'board_id': board.id, 'board_name': board.name}
 
     return jsonify(board_list)
