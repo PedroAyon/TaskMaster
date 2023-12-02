@@ -8,7 +8,7 @@ from routes.auth import token_required
 @app.route('/assigned_tasks/members', methods=['GET'])
 @token_required
 def get_members_assigned_to_task(current_user):
-    data = request.args
+    data = request.form
     task_id = data.get('task_id')
 
     if not task_id:
@@ -31,7 +31,7 @@ def get_members_assigned_to_task(current_user):
 @app.route('/assigned_tasks/tasks', methods=['GET'])
 @token_required
 def get_tasks_assigned_to_member(current_user):
-    data = request.args
+    data = request.form
     user_id = data.get('user_id')
     workspace_id = data.get('workspace_id')
 
@@ -41,7 +41,7 @@ def get_tasks_assigned_to_member(current_user):
     assigned_tasks = AssignedTasks.query.filter_by(user_id=user_id, workspace_id=workspace_id).all()
 
     task_details = [
-        {'task_id': assigned_task.task_id, 'list_id': Task.query.filter_by(id=assigned_task.task_id).first().list_id,
+        {'id': assigned_task.task_id, 'list_id': Task.query.filter_by(id=assigned_task.task_id).first().list_id,
          'title': Task.query.filter_by(id=assigned_task.task_id).first().title,
          'description': Task.query.filter_by(id=assigned_task.task_id).first().description,
          'due_date': Task.query.filter_by(id=assigned_task.task_id).first().due_date} for assigned_task in

@@ -8,7 +8,7 @@ from routes.auth import token_required
 @app.route('/task/all', methods=['GET'])
 @token_required
 def get_tasks(current_user):
-    data = request.args
+    data = request.form
     board_list_id = data.get('board_list_id')
 
     if not board_list_id:
@@ -17,7 +17,7 @@ def get_tasks(current_user):
     task_list = Task.query.filter_by(list_id=board_list_id).all()
 
     task_details = [
-        {'task_id': task.id, 'list_id': task.list_id, 'title': task.title, 'description': task.description,
+        {'id': task.id, 'list_id': task.list_id, 'title': task.title, 'description': task.description,
          'due_date': task.due_date} for task in task_list]
 
     return jsonify(task_details)
@@ -46,7 +46,7 @@ def create_task(current_user):
 @token_required
 def update_task(current_user):
     data = request.form
-    task_id = data.get('task_id')
+    task_id = data.get('id')
     title = data.get('title')
     description = data.get('description')
     due_date = data.get('due_date')
@@ -71,7 +71,7 @@ def update_task(current_user):
 @token_required
 def delete_task(current_user):
     data = request.form
-    task_id = data.get('task_id')
+    task_id = data.get('id')
 
     if not task_id:
         return jsonify({'message': 'task_id is required !'}), 400
@@ -89,7 +89,7 @@ def delete_task(current_user):
 @app.route('/board/tasks', methods=['GET'])
 @token_required
 def get_board_tasks(current_user):
-    data = request.args
+    data = request.form
     board_id = data.get('board_id')
 
     if not board_id:
@@ -107,7 +107,7 @@ def get_board_tasks(current_user):
     # Create a list of task details
     task_list = [
         {
-            'task_id': task.id,
+            'id': task.id,
             'list_id': task.list_id,
             'title': task.title,
             'description': task.description,
@@ -122,8 +122,8 @@ def get_board_tasks(current_user):
 @token_required
 def move_task_to_list(current_user):
     data = request.form
-    task_id = data.get('task_id')
-    move_to_list_id = data.get('move_to_list_id')
+    task_id = data.get('id')
+    move_to_list_id = data.get('list_id')
 
     if not task_id or not move_to_list_id:
         return jsonify({'message': 'task_id and move_to_list_id are required !'}), 400

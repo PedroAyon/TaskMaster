@@ -57,7 +57,7 @@ def delete_board(current_user):
 @app.route('/board/all', methods=['GET'])
 @token_required
 def get_boards(current_user):
-    data = request.args
+    data = request.form
     workspace_id = data.get('workspace_id')
 
     if not workspace_id:
@@ -80,7 +80,7 @@ def get_boards(current_user):
 @app.route('/board', methods=['GET'])
 @token_required
 def get_board(current_user):
-    data = request.args
+    data = request.form
     board_id = data.get('board_id')
 
     if not board_id:
