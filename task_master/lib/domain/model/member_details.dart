@@ -15,7 +15,7 @@ class MemberDetails {
   factory MemberDetails.fromJson(Map<String, dynamic> json) {
     return MemberDetails(
       workspaceId: json['workspace_id'],
-      userId: json['userId'],
+      userId: json['user_id'],
       email: json['email'],
       name: json['name'],
       role: json['role'],
