@@ -1,7 +1,7 @@
 from flask import jsonify, request
 
 from core import app
-from core.models import db, AssignedTasks, Task, User, Member
+from core.models import db, AssignedTasks, Task, User, Member, BoardList
 from routes.auth import token_required
 
 
@@ -34,11 +34,16 @@ def get_tasks_assigned_to_member(current_user):
     data = request.form
     user_id = data.get('user_id')
     workspace_id = data.get('workspace_id')
+    board_id = data.get('board_id')
 
     if not user_id or not workspace_id:
         return jsonify({'message': 'user_id and workspace_id are required !'}), 400
 
-    assigned_tasks = AssignedTasks.query.filter_by(user_id=user_id, workspace_id=workspace_id).all()
+    if not board_id:
+        assigned_tasks = AssignedTasks.query.filter_by(user_id=user_id, workspace_id=workspace_id).all()
+    else:
+        assigned_tasks = AssignedTasks.query.join(Task).filter_by(Task.id == AssignedTasks.task_id).join(
+            BoardList).filter_by(BoardList.id == Task.list_id)
 
     task_details = [
         {'id': assigned_task.task_id, 'list_id': Task.query.filter_by(id=assigned_task.task_id).first().list_id,
