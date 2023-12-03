@@ -20,6 +20,7 @@ def get_members_assigned_to_task(current_user):
         {
             'user_id': assigned_member.user_id,
             'workspace_id': assigned_member.workspace_id,
+            'role': assigned_member.role,
             'name': User.query.filter_by(id=assigned_member.user_id).first().name,
             'email': User.query.filter_by(id=assigned_member.user_id).first().email,
         }
