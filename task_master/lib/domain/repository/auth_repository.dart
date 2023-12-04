@@ -1,7 +1,11 @@
+import '../model/user.dart';
+
 abstract class AuthRepository {
-  Future<bool> logIn(String email, String password);
+  Future<String?> logIn(String email, String password);
   Future<void> saveJWT(String jwt);
   Future<String?> getJWT();
   Future<void> logOut(); // Delete JWT
-  Future<bool> signUp(String name, String email, String password);
+  Future<String?> signUp(String name, String email, String password);
+  Future<bool> userLoggedIn();
+  Future<User?> getUser();
 }

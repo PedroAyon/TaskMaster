@@ -1,8 +1,8 @@
 import '../model/board_list.dart';
 
-abstract class BoardListRepository {
+abstract class ListRepository {
   Future<List<BoardList>> getAllLists(int boardId);
-  Future<bool> deleteList(int listId);
-  Future<bool> changeName(int listId, String newName);
-  Future<bool> createList(int boardId, String name);
+  Future<String?> deleteList(int listId);
+  Future<String?> changeName(int listId, String newName);
+  Future<String?> createList(int boardId, String name);
 }
