@@ -8,7 +8,7 @@ from routes.auth import token_required
 @app.route('/assigned_tasks/members', methods=['GET'])
 @token_required
 def get_members_assigned_to_task(current_user):
-    data = request.form
+    data = request.args
     task_id = data.get('task_id')
 
     if not task_id:
@@ -32,7 +32,7 @@ def get_members_assigned_to_task(current_user):
 @app.route('/assigned_tasks/tasks', methods=['GET'])
 @token_required
 def get_tasks_assigned_to_member(current_user):
-    data = request.form
+    data = request.args
     user_id = data.get('user_id')
     workspace_id = data.get('workspace_id')
     board_id = data.get('board_id')
@@ -56,7 +56,7 @@ def get_tasks_assigned_to_member(current_user):
     return jsonify(task_details)
 
 
-@app.route('/assigned_tasks/assign', methods=['POST'])
+@app.route('/task/assign', methods=['POST'])
 @token_required
 def assign_task_to_member(current_user):
     data = request.form
@@ -79,7 +79,7 @@ def assign_task_to_member(current_user):
     return jsonify({'message': 'Task assigned to the member successfully'}), 201
 
 
-@app.route('/assigned_tasks/absolve', methods=['DELETE'])
+@app.route('/task/absolve', methods=['DELETE'])
 @token_required
 def absolve_task_to_member(current_user):
     data = request.form

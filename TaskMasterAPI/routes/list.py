@@ -8,7 +8,7 @@ from routes.auth import token_required
 @app.route('/list/all', methods=['GET'])
 @token_required
 def get_board_lists(current_user):
-    data = request.form
+    data = request.args
     board_id = data.get('board_id')
 
     if not board_id:

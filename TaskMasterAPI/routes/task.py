@@ -5,10 +5,10 @@ from core.models import db, Task, BoardList, Member, Board
 from routes.auth import token_required
 
 
-@app.route('/task/all', methods=['GET'])
+@app.route('/task/list/all', methods=['GET'])
 @token_required
 def get_tasks(current_user):
-    data = request.form
+    data = request.args
     board_list_id = data.get('board_list_id')
 
     if not board_list_id:
@@ -86,10 +86,10 @@ def delete_task(current_user):
     return jsonify({'message': 'Task deleted successfully'}), 200
 
 
-@app.route('/board/tasks', methods=['GET'])
+@app.route('/task/board/all', methods=['GET'])
 @token_required
 def get_board_tasks(current_user):
-    data = request.form
+    data = request.args
     board_id = data.get('board_id')
 
     if not board_id:
@@ -118,7 +118,7 @@ def get_board_tasks(current_user):
     return jsonify(task_list)
 
 
-@app.route('/board/task/move', methods=['POST'])
+@app.route('/task/move', methods=['POST'])
 @token_required
 def move_task_to_list(current_user):
     data = request.form

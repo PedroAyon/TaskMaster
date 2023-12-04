@@ -39,24 +39,17 @@ def token_required(f):
 def login():
     # creates dictionary of form data
     auth = request.form
-
-    if not auth or not auth.get('email') or not auth.get('password'):
+    email = request.form.get('email')
+    password = request.form.get('password')
+    if not email or not password:
         # returns 401 if any email or / and password is missing
-        return make_response(
-            'Could not verify',
-            401,
-            {'WWW-Authenticate': 'Basic realm ="Login required !!"'}
-        )
+        return jsonify({'message': 'Login credentials required!'}), 400
 
     user = User.query.filter_by(email=auth.get('email')).first()
 
     if not user:
         # returns 401 if user does not exist
-        return make_response(
-            'Could not verify',
-            401,
-            {'WWW-Authenticate': 'Basic realm ="User does not exist !!"'}
-        )
+        return jsonify({'message': 'User does not exist!'}), 401
 
     if check_password_hash(user.password, auth.get('password')):
         # generates the JWT Token
@@ -67,11 +60,7 @@ def login():
         print(f'Token: {token}')
         return make_response(jsonify({'token': token}), 201)
     # returns 403 if password is wrong
-    return make_response(
-        'Could not verify',
-        403,
-        {'WWW-Authenticate': 'Basic realm ="Wrong Password !!"'}
-    )
+    return jsonify({'message': 'Wrong password!'}), 403
 
 
 # signup route
@@ -83,11 +72,13 @@ def signup():
     # gets name, email and password
     name, email = data.get('name'), data.get('email')
     password = data.get('password')
+    if not name or not email or not password:
+        return jsonify({'message': 'Credentials required!'}), 400
 
     # checking for existing user
     user = User.query.filter_by(email=email).first()
     if user:
-        return make_response('User already exists. Please Log in.', 202)
+        return jsonify({'message': 'User already exists. Please Log in'}), 400
 
     user = User(
         name=name,

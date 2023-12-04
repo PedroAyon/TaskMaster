@@ -33,6 +33,27 @@ def create_workspace(current_user):
     return jsonify({'message': 'Successfully created.'}), 201
 
 
+@app.route('/workspace/rename', methods=['PUT'])
+@token_required
+def rename_workspace(current_user):
+    data = request.form
+    workspace_id = data.get('id')
+    new_name = data.get('new_name')
+    if not workspace_id or not new_name:
+        return jsonify({'message': 'id and name required !!'}), 400
+
+    workspace = Workspace.query.filter_by(id=workspace_id).first()
+    if not workspace:
+        return jsonify({'message': 'Workspace does not exist !!'}), 400
+    if workspace.created_by != current_user.id:
+        return jsonify({'message': 'Current user is not the creator of this workspace !!'}), 403
+
+    workspace.name = new_name
+    db.session.commit()
+    db.session.commit()
+    return jsonify({'message': 'Successfully created.'}), 201
+
+
 @app.route('/workspace', methods=['DELETE'])
 @token_required
 def delete_workspace(current_user):
@@ -55,8 +76,8 @@ def delete_workspace(current_user):
 def add_member_to_workspace(current_user):
     data = request.form
     workspace_id = data.get('workspace_id')
-    user_email = data.get('user_email')
-    user_role = data.get('user_role')
+    user_email = data.get('email')
+    user_role = data.get('role')
 
     if not workspace_id or not user_email or not user_role:
         return jsonify({'message': 'workspace_id, user_email, and user_role are required !!'}), 400
@@ -101,17 +122,17 @@ def remove_member_from_workspace(current_user):
         return jsonify({'message': 'You do not have permission to remove members from this workspace.'}), 403
 
     # Check if the user with the specified id exists
-    member_user = User.query.filter_by(id=user_id).first()
-    if not member_user:
+    user_check = User.query.filter_by(id=user_id).first()
+    if not user_check:
         return jsonify({'message': 'User with the specified id does not exist.'}), 404
 
     # Check if the user is the creator of the workspace
-    workspace_creator_check = Workspace.query.filter_by(id=workspace_id, created_by=member_user.id).first()
+    workspace_creator_check = Workspace.query.filter_by(id=workspace_id, created_by=user_check.id).first()
     if workspace_creator_check:
         return jsonify({'message': 'The creator of the workspace cannot be removed.'}), 400
 
     # Check if the user is a member of the workspace
-    existing_member_check = Member.query.filter_by(user_id=member_user.id, workspace_id=workspace_id).first()
+    existing_member_check = Member.query.filter_by(user_id=user_check.id, workspace_id=workspace_id).first()
     if not existing_member_check:
         return jsonify({'message': 'User is not a member of the workspace.'}), 404
 
@@ -139,6 +160,10 @@ def change_member_role(current_user):
     if not workspace_admin_check:
         return jsonify({'message': 'You do not have permission to change member roles in this workspace.'}), 403
 
+    workspace = Workspace.query.filter_by(id=workspace_id).first()
+    if workspace.created_by == int(user_id):
+        return jsonify({'message': 'Creator of the workspace can only be Admin.'}), 403
+
     # Check if the user with the specified email exists
     member_user = User.query.filter_by(id=user_id).first()
     if not member_user:
@@ -158,8 +183,8 @@ def change_member_role(current_user):
 @app.route('/workspace/members', methods=['GET'])
 @token_required
 def get_workspace_members(current_user):
-    data = request.form
-    workspace_id = data.get('workspace_id')
+    data = request.args
+    workspace_id = data.get('id')
 
     if not workspace_id:
         return jsonify({'message': 'workspace_id is required !!'}), 400
@@ -180,4 +205,20 @@ def get_workspace_members(current_user):
             {'workspace_id': member.workspace_id, 'user_id': user.id, 'name': user.name, 'email': user.email,
              'role': member.role})
 
-    return jsonify(member_details)
+    return jsonify(member_details), 201
+
+
+@app.route('/workspace/get_user_role', methods=['GET'])
+@token_required
+def get_user_role(current_user):
+    data = request.args
+    workspace_id = data.get('workspace_id')
+    user_id = data.get('user_id')
+    if not workspace_id:
+        return jsonify({'message': 'workspace_id are required !!'}), 400
+    if not user_id:
+        user_id = current_user.id
+    existing_member = Member.query.filter_by(user_id=user_id, workspace_id=workspace_id).first()
+    if not existing_member:
+        return jsonify({'message': 'User is not a member of the workspace.'}), 404
+    return jsonify({'role': existing_member.role}), 200

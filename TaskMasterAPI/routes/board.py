@@ -10,7 +10,7 @@ from routes.auth import token_required
 def create_board(current_user):
     data = request.form
     workspace_id = data.get('workspace_id')
-    board_name = data.get('board_name')
+    board_name = data.get('name')
 
     if not workspace_id or not board_name:
         return jsonify({'message': 'workspace_id and board_name are required !'}), 400
@@ -33,19 +33,13 @@ def create_board(current_user):
 @token_required
 def delete_board(current_user):
     data = request.form
-    workspace_id = data.get('workspace_id')
     board_id = data.get('board_id')
 
-    if not workspace_id or not board_id:
+    if not board_id:
         return jsonify({'message': 'workspace_id and board_id are required !'}), 400
 
-    # Check if the current user is a member of the specified workspace
-    workspace_member_check = Member.query.filter_by(user_id=current_user.id, workspace_id=workspace_id).first()
-    if not workspace_member_check:
-        return jsonify({'message': 'You do not have permission to delete a board in this workspace.'}), 403
-
     # Check if the board exists in the specified workspace
-    existing_board = Board.query.filter_by(id=board_id, workspace_id=workspace_id).first()
+    existing_board = Board.query.filter_by(id=board_id).first()
     if not existing_board:
         return jsonify({'message': 'Board does not exist in the specified workspace.'}), 404
 
@@ -57,7 +51,7 @@ def delete_board(current_user):
 @app.route('/board/all', methods=['GET'])
 @token_required
 def get_boards(current_user):
-    data = request.form
+    data = request.args
     workspace_id = data.get('workspace_id')
 
     if not workspace_id:
@@ -72,15 +66,15 @@ def get_boards(current_user):
     boards = Board.query.filter_by(workspace_id=workspace_id).all()
 
     # Create a list of board details
-    board_list = [{'board_id': board.id, 'board_name': board.name} for board in boards]
+    board_list = [{'id': board.id, 'name': board.name, 'workspace_id': board.workspace_id} for board in boards]
 
-    return jsonify(board_list)
+    return jsonify(board_list), 200
 
 
 @app.route('/board', methods=['GET'])
 @token_required
 def get_board(current_user):
-    data = request.form
+    data = request.args
     board_id = data.get('board_id')
 
     if not board_id:
@@ -97,6 +91,6 @@ def get_board(current_user):
         return jsonify({'message': 'You do not have permission to get boards in this workspace.'}), 403
 
     # Create a list of board details
-    board_list = {'board_id': board.id, 'board_name': board.name}
+    board_list = {'id': board.id, 'name': board.name, 'workspace_id': board.workspace_id}
 
     return jsonify(board_list)
