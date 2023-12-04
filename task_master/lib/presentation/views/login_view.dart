@@ -1,6 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:task_master/data/repository/auth_repository_impl.dart';
+import 'package:task_master/presentation/RepositoryManager.dart';
+import 'package:task_master/presentation/views/home_view.dart';
 import 'package:task_master/presentation/views/sign_up_view.dart';
+
+import '../../util/utils.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -34,7 +39,7 @@ class _LoginViewState extends State<LoginView> {
         child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
+        SizedBox(
           width: 300,
           child: Text(
             "Inicio de Sesión",
@@ -45,42 +50,18 @@ class _LoginViewState extends State<LoginView> {
             textAlign: TextAlign.center,
           ),
         ),
-        SizedBox(height: 16),
-        Container(
-          width: 300,
-          child: TextField(
-            controller: emailController,
-            decoration: const InputDecoration(
-                labelText: 'email',
-                border: OutlineInputBorder(),
-                hintText: 'example@domain.com'),
-          ),
-        ),
-        SizedBox(height: 16),
-        Container(
-          width: 300,
-          child: TextField(
-            controller: passwordController,
-            obscureText: true,
-            decoration: const InputDecoration(
-                labelText: 'password',
-                border: OutlineInputBorder(),
-                hintText: 'example@domain.com'),
-          ),
-        ),
-        SizedBox(height: 32),
+        const SizedBox(height: 16),
+        _emailTextField(),
+        const SizedBox(height: 16),
+        _passwordTextField(),
+        const SizedBox(height: 32),
         ElevatedButton(
           style: ButtonStyle(
             backgroundColor: MaterialStateProperty.all<Color>(
                 Theme.of(context).colorScheme.primary),
           ),
-          onPressed: () {
-            // Add your authentication logic here
-            // For simplicity, let's just print the email and password for now
-            print('Email: ${emailController.text}');
-            print('Password: ${passwordController.text}');
-          },
-          child: Container(
+          onPressed: _logIn,
+          child: SizedBox(
             width: 250,
             child: Text(
               'Iniciar Sesion',
@@ -89,15 +70,12 @@ class _LoginViewState extends State<LoginView> {
             ),
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         ElevatedButton(
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SignupView()),
-            );
+            Navigator.pushNamed(context, '/signup');
           },
-          child: Container(
+          child: const SizedBox(
             width: 250,
             child: Text(
               'Registarse',
@@ -105,8 +83,48 @@ class _LoginViewState extends State<LoginView> {
             ),
           ),
         ),
-        SizedBox(height: 32),
+        const SizedBox(height: 32),
       ],
     ));
+  }
+
+  Widget _emailTextField() {
+    return SizedBox(
+      width: 300,
+      child: TextField(
+        controller: emailController,
+        keyboardType: TextInputType.emailAddress,
+        decoration: const InputDecoration(
+            labelText: 'email',
+            border: OutlineInputBorder(),
+            hintText: 'example@domain.com'),
+      ),
+    );
+  }
+
+  Widget _passwordTextField() {
+    return SizedBox(
+      width: 300,
+      child: TextField(
+        controller: passwordController,
+        obscureText: true,
+        decoration: const InputDecoration(
+            labelText: 'password', border: OutlineInputBorder()),
+      ),
+    );
+  }
+
+  void _logIn() async {
+    // TODO: validate form
+    String? errorMessage = await RepositoryManager()
+        .authRepository
+        .logIn(emailController.text, passwordController.text);
+    if (context.mounted) {
+      if (errorMessage != null) {
+        snackBar(context, errorMessage);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
+      }
+    }
   }
 }

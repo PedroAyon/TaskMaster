@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:task_master/presentation/views/home_view.dart';
+import 'package:task_master/presentation/views/login_view.dart';
+import 'package:task_master/util/utils.dart';
+
+import '../RepositoryManager.dart';
 
 class SignupView extends StatefulWidget {
   const SignupView({Key? key}) : super(key: key);
@@ -33,7 +38,7 @@ class _SignupViewState extends State<SignupView> {
         child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
+        SizedBox(
           width: 300,
           child: Text(
             "Registrarse",
@@ -44,40 +49,19 @@ class _SignupViewState extends State<SignupView> {
             textAlign: TextAlign.center,
           ),
         ),
-        SizedBox(height: 16),
-        Container(
-          width: 300,
-          child: TextField(
-            controller: emailController,
-            decoration: const InputDecoration(
-                labelText: 'email',
-                border: OutlineInputBorder(),
-                hintText: 'example@domain.com'),
-          ),
-        ),
-        SizedBox(height: 16),
-        Container(
-          width: 300,
-          child: TextField(
-            controller: passwordController,
-            obscureText: true,
-            decoration: const InputDecoration(
-                labelText: 'password',
-                border: OutlineInputBorder(),
-                hintText: 'example@domain.com'),
-          ),
-        ),
-        SizedBox(height: 32),
+        const SizedBox(height: 16),
+        _nameTextField(),
+        const SizedBox(height: 16),
+        _emailTextField(),
+        const SizedBox(height: 16),
+        _passwordTextField(),
+        const SizedBox(height: 32),
         ElevatedButton(
           style: ButtonStyle(
             backgroundColor: MaterialStateProperty.all<Color>(
                 Theme.of(context).colorScheme.primary),
           ),
-          onPressed: () {
-            print('Name: ${nameController.text}');
-            print('Email: ${emailController.text}');
-            print('Password: ${passwordController.text}');
-          },
+          onPressed: _signUp,
           child: Container(
             width: 250,
             child: Text(
@@ -87,12 +71,12 @@ class _SignupViewState extends State<SignupView> {
             ),
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         ElevatedButton(
           onPressed: () {
             Navigator.pop(context);
           },
-          child: Container(
+          child: const SizedBox(
             width: 250,
             child: Text(
               'Iniciar sesion',
@@ -100,8 +84,61 @@ class _SignupViewState extends State<SignupView> {
             ),
           ),
         ),
-        SizedBox(height: 32),
+        const SizedBox(height: 32),
       ],
     ));
+  }
+
+  Widget _emailTextField() {
+    return SizedBox(
+      width: 300,
+      child: TextField(
+        keyboardType: TextInputType.emailAddress,
+        controller: emailController,
+        decoration: const InputDecoration(
+            labelText: 'email',
+            border: OutlineInputBorder(),
+            hintText: 'example@domain.com'),
+      ),
+    );
+  }
+
+  Widget _nameTextField() {
+    return SizedBox(
+      width: 300,
+      child: TextField(
+        controller: nameController,
+        decoration: const InputDecoration(
+          labelText: 'name',
+          border: OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  Widget _passwordTextField() {
+    return SizedBox(
+      width: 300,
+      child: TextField(
+        controller: passwordController,
+        obscureText: true,
+        decoration: const InputDecoration(
+            labelText: 'password', border: OutlineInputBorder()),
+      ),
+    );
+  }
+
+  _signUp() async {
+    // TODO: validate form
+    String? errorMessage = await RepositoryManager().authRepository.signUp(
+        nameController.text, emailController.text, passwordController.text);
+    if (context.mounted) {
+      if (errorMessage != null) {
+        snackBar(context, errorMessage);
+      } else {
+        snackBar(context, 'Registrado exitosamente');
+        Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
+      }
+    }
   }
 }
