@@ -80,7 +80,6 @@ def get_board(current_user):
     if not board_id:
         return jsonify({'message': 'board_id is required !'}), 400
 
-    # Check if the current user is a member of the specified workspace
     board = Board.query.filter_by(id=board_id).first()
     if not board:
         return jsonify({'message': 'Board not found.'}), 404

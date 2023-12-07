@@ -52,7 +52,7 @@ def change_board_list_name(current_user):
     new_name = data.get('new_name')
 
     if not board_list_id or not new_name:
-        return jsonify({'message': 'board_list_id, and new_name are required !'}), 400
+        return jsonify({'message': 'id, and new_name are required !'}), 400
 
     # Check if the board list exists in the specified workspace
     existing_board_list = BoardList.query.filter_by(id=board_list_id).first()

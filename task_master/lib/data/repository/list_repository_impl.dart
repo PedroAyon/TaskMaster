@@ -31,7 +31,7 @@ class ListRepositoryImpl implements ListRepository {
   @override
   Future<String?> deleteList(int listId) async {
     Map<String, String> data = {'id': listId.toString()};
-    final response = await http.post(Uri.parse(_listURL),
+    final response = await http.delete(Uri.parse(_listURL),
         body: data, headers: await _headers());
     if (response.statusCode.isStatusOk()) return null;
     return json.decode(response.body)['message'];

@@ -1,9 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:task_master/data/repository/auth_repository_impl.dart';
 import 'package:task_master/presentation/RepositoryManager.dart';
-import 'package:task_master/presentation/views/home_view.dart';
-import 'package:task_master/presentation/views/sign_up_view.dart';
 
 import '../../util/utils.dart';
 

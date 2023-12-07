@@ -86,6 +86,7 @@ class _WorkspaceListState extends State<WorkspaceList> {
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
+        heroTag: "btn1",
         onPressed: () {
           _workspaceNameDialog(callbackAction: _createWorkspace);
         },

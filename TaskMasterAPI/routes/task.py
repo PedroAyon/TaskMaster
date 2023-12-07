@@ -1,7 +1,7 @@
 from flask import jsonify, request
 
 from core import app
-from core.models import db, Task, BoardList, Member, Board
+from core.models import db, Task, BoardList, Member, Board, Workspace
 from routes.auth import token_required
 
 
@@ -93,10 +93,14 @@ def get_board_tasks(current_user):
     board_id = data.get('board_id')
 
     if not board_id:
-        return jsonify({'message': 'Board is required.'}), 400
+        return jsonify({'message': 'board_id is required.'}), 400
 
     # Check if the current user is a member of the specified board's workspace
-    board_workspace_check = Member.query.join(Board).filter(Board.id == board_id,
+    board = Board.query.filter_by(id=board_id).first()
+    if not board:
+        return jsonify({'message': 'Board does not exists.'}), 400
+
+    board_workspace_check = Member.query.join(Workspace).filter(Workspace.id == board.workspace_id,
                                                             Member.user_id == current_user.id).first()
     if not board_workspace_check:
         return jsonify({'message': 'You do not have permission to get tasks in this board.'}), 403

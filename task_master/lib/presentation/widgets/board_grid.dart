@@ -6,8 +6,10 @@ import 'package:task_master/util/utils.dart';
 
 class BoardGrid extends StatefulWidget {
   final Workspace workspace;
+  final Function(Board board) onBoardClick;
 
-  const BoardGrid({super.key, required this.workspace});
+  const BoardGrid(
+      {super.key, required this.workspace, required this.onBoardClick});
 
   @override
   State<BoardGrid> createState() => _BoardGridState();
@@ -19,14 +21,9 @@ class _BoardGridState extends State<BoardGrid> {
   final _newBoardFormKey = GlobalKey<FormState>();
 
   @override
-  void initState() {
-    super.initState();
+  Widget build(BuildContext context) {
     boards =
         RepositoryManager().boardRepository.getAllBoards(widget.workspace.id!);
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
@@ -48,6 +45,7 @@ class _BoardGridState extends State<BoardGrid> {
       floatingActionButton: FloatingActionButton.extended(
         label: const Text('Nuevo tablero'),
         icon: const Icon(Icons.add),
+        heroTag: "btn2",
         onPressed: () {
           _createBoardDialog();
         },
@@ -76,11 +74,14 @@ class _BoardGridState extends State<BoardGrid> {
       padding: const EdgeInsets.all(16),
       child: Card(
         child: InkWell(
-          onTap: () {},
+          onTap: () {
+            widget.onBoardClick(board);
+          },
           child: Center(
             child: Text(
               board.name,
               style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -141,17 +142,19 @@ class _BoardGridState extends State<BoardGrid> {
   }
 
   _createBoard() async {
-    String? message = await RepositoryManager()
-        .boardRepository
-        .createBoard(widget.workspace.id!, _newBoardNameController.text);
-    if (context.mounted) {
-      if (message != null) {
-        snackBar(context, message);
-      } else {
-        snackBar(context, 'Tablero creado exitosamente');
-        _newBoardNameController.clear();
-        _refreshGrid();
-        Navigator.of(context).pop();
+    if (_newBoardFormKey.currentState!.validate()) {
+      String? message = await RepositoryManager()
+          .boardRepository
+          .createBoard(widget.workspace.id!, _newBoardNameController.text);
+      if (context.mounted) {
+        if (message != null) {
+          snackBar(context, message);
+        } else {
+          snackBar(context, 'Tablero creado exitosamente');
+          _newBoardNameController.clear();
+          _refreshGrid();
+          Navigator.of(context).pop();
+        }
       }
     }
   }

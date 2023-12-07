@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:task_master/presentation/views/home_view.dart';
-import 'package:task_master/presentation/views/login_view.dart';
 import 'package:task_master/util/utils.dart';
 
 import '../RepositoryManager.dart';
@@ -62,7 +60,7 @@ class _SignupViewState extends State<SignupView> {
                 Theme.of(context).colorScheme.primary),
           ),
           onPressed: _signUp,
-          child: Container(
+          child: SizedBox(
             width: 250,
             child: Text(
               'Regisrarse',

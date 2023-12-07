@@ -14,7 +14,7 @@ class TaskRepositoryImpl implements TaskRepository {
   Future<String?> createTask(Task task) async{
     Map<String, String> data = {'list_id': task.listId.toString(), 'title': task.title};
     if (task.description != null) data['description'] = task.description!;
-    if (task.dueDate != null) data['due_date'] = task.dueDate.toString()!;
+    if (task.dueDate != null) data['due_date'] = task.dueDate.toString();
     final response = await http.post(Uri.parse(_taskURL),
         body: data, headers: await _headers());
     if (response.statusCode.isStatusOk()) return null;
@@ -33,7 +33,7 @@ class TaskRepositoryImpl implements TaskRepository {
   @override
   Future<List<Task>> getAllTasks(int boardId) async {
     Map<String, String> data = {'board_id': boardId.toString()};
-    final response = await http.get(Uri.http(domain, '/board/all', data),
+    final response = await http.get(Uri.http(domain, '/task/board/all', data),
         headers: await _headers());
     Iterable responseBody = json.decode(response.body);
     List<Task> tasks =
@@ -65,7 +65,7 @@ class TaskRepositoryImpl implements TaskRepository {
   Future<String?> updateTask(Task task) async {
     Map<String, String> data = {'id' : task.id.toString(), 'title': task.title};
     if (task.description != null) data['description'] = task.description!;
-    if (task.dueDate != null) data['due_date'] = task.dueDate.toString()!;
+    if (task.dueDate != null) data['due_date'] = task.dueDate.toString();
     final response = await http.put(Uri.parse(_taskURL),
         body: data, headers: await _headers());
     if (response.statusCode.isStatusOk()) return null;

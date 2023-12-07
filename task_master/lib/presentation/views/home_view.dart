@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:task_master/presentation/widgets/board_grid.dart';
+import 'package:task_master/presentation/widgets/log_out_button.dart';
 import 'package:task_master/presentation/widgets/member_management.dart';
 import 'package:task_master/presentation/widgets/workspace_list.dart';
 
+import '../../domain/model/board.dart';
 import '../../domain/model/workspace.dart';
 
 class HomeView extends StatefulWidget {
@@ -13,7 +15,7 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  late Widget mainPanel;
+  late Widget? mainPanel;
 
   @override
   void initState() {
@@ -27,6 +29,7 @@ class _HomeViewState extends State<HomeView> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text("TaskMaster"),
+        actions: [logOutIconButton(context)],
       ),
       body: Center(
           child: Row(
@@ -42,7 +45,7 @@ class _HomeViewState extends State<HomeView> {
                   clearMainPanel: _clearMainPanel,
                 ),
               )),
-          Expanded(child: mainPanel)
+          Expanded(child: mainPanel!)
         ],
       )),
     );
@@ -50,7 +53,7 @@ class _HomeViewState extends State<HomeView> {
 
   _workspacePanel(Workspace workspace) {
     setState(() {
-      mainPanel = BoardGrid(workspace: workspace);
+      mainPanel = BoardGrid(workspace: workspace, onBoardClick: _boardPanel,);
     });
   }
 
@@ -65,4 +68,9 @@ class _HomeViewState extends State<HomeView> {
       mainPanel = const SizedBox.shrink();
     });
   }
+
+  _boardPanel(Board board) {
+    Navigator.pushNamed(context, '/board', arguments: board);
+  }
+
 }

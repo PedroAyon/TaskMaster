@@ -24,15 +24,11 @@ class _MemberManagementState extends State<MemberManagement> {
   String _newMemberRole = memberRoles.first;
 
   @override
-  void initState() {
-    super.initState();
+  Widget build(BuildContext context) {
     members = RepositoryManager()
         .workspaceRepository
         .getWorkspaceMembers(widget.workspace.id!);
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
