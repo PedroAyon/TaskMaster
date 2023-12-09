@@ -186,9 +186,9 @@ class _MemberManagementState extends State<MemberManagement> {
 
   _refreshMembers() {
     setState(() {
-      members = RepositoryManager()
-          .workspaceRepository
-          .getWorkspaceMembers(widget.workspace.id!);
+      // members = RepositoryManager()
+      //     .workspaceRepository
+      //     .getWorkspaceMembers(widget.workspace.id!);
     });
   }
 }

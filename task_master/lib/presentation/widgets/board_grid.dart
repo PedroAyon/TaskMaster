@@ -161,9 +161,9 @@ class _BoardGridState extends State<BoardGrid> {
 
   _refreshGrid() {
     setState(() {
-      boards = RepositoryManager()
-          .boardRepository
-          .getAllBoards(widget.workspace.id!);
+      // boards = RepositoryManager()
+      //     .boardRepository
+      //     .getAllBoards(widget.workspace.id!);
     });
   }
 }

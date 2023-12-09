@@ -4,8 +4,10 @@ import 'package:task_master/domain/model/board.dart';
 import 'package:task_master/domain/model/task.dart';
 import 'package:task_master/presentation/RepositoryManager.dart';
 import 'package:task_master/presentation/widgets/not_found_page.dart';
+import 'package:intl/intl.dart';
 
 import '../../domain/model/board_list.dart';
+import '../../domain/model/workspace.dart';
 import '../../util/utils.dart';
 
 class BoardView extends StatefulWidget {
@@ -16,36 +18,40 @@ class BoardView extends StatefulWidget {
 }
 
 class _BoardViewState extends State<BoardView> {
+  late Workspace? workspace;
   late Board? board;
-  final AppFlowyBoardController controller = AppFlowyBoardController(
-    onMoveGroup: (fromGroupId, fromIndex, toGroupId, toIndex) {
-      debugPrint('Move item from $fromIndex to $toIndex');
-    },
-    onMoveGroupItem: (groupId, fromIndex, toIndex) {
-      debugPrint('Move $groupId:$fromIndex to $groupId:$toIndex');
-    },
-    onMoveGroupItemToGroup: (fromGroupId, fromIndex, toGroupId, toIndex) {
-      debugPrint('Move $fromGroupId:$fromIndex to $toGroupId:$toIndex');
-    },
-  );
-  late AppFlowyBoardScrollController boardController;
+  late final AppFlowyBoardController controller;
+  late AppFlowyBoardScrollController boardScrollController;
   late Future<List<BoardList>> futureLists;
   late Future<List<Task>> futureTasks;
+  Map<int, List<Task>> taskMap = {};
   final _newListFormKey = GlobalKey<FormState>();
   final TextEditingController _newListController = TextEditingController();
   final _newTaskFormKey = GlobalKey<FormState>();
   final TextEditingController _newTaskController = TextEditingController();
+  bool filtered = false;
 
   @override
   void initState() {
-    boardController = AppFlowyBoardScrollController();
-
+    boardScrollController = AppFlowyBoardScrollController();
+    controller = AppFlowyBoardController(
+      onMoveGroup: (fromGroupId, fromIndex, toGroupId, toIndex) {
+        debugPrint('Move item from $fromIndex to $toIndex');
+      },
+      onMoveGroupItem: (groupId, fromIndex, toIndex) async {
+        debugPrint('Move $groupId:$fromIndex to $groupId:$toIndex');
+      },
+      onMoveGroupItemToGroup: _moveTaskToList,
+    );
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    board = ModalRoute.of(context)!.settings.arguments as Board?;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as BoardViewArguments?;
+    workspace = args?.workspace;
+    board = args?.board;
     return board != null ? view() : const NotFoundPage();
   }
 
@@ -56,13 +62,40 @@ class _BoardViewState extends State<BoardView> {
       appBar: AppBar(
         title: Text(board!.name),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(onPressed: () async {
+            await RepositoryManager().boardRepository.deleteBoard(board!.id!);
+            if (context.mounted) Navigator.pop(context); // Navigate back when button is pressed
+          }, icon: const Icon(Icons.delete)),
+          const SizedBox(width: 8,),
+          InkWell(
+            onTap: () {
+              setState(() {
+                filtered = !filtered;
+              });
+            },
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Text(filtered ? 'Tareas asignadas a mí' : 'Todas las tareas'),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.filter_alt_outlined,
+                    color: Colors.black,
+                  ),
+                ],
+              ),
+            ),
+          )
+        ],
       ),
       body: Container(
           padding: const EdgeInsets.all(16),
           alignment: Alignment.topCenter,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            children: [_boardFutureBuilder()],
+            children: [_boardBuilder()],
           )),
       floatingActionButton: FloatingActionButton.extended(
         label: const Text('Nueva lista'),
@@ -75,7 +108,7 @@ class _BoardViewState extends State<BoardView> {
     );
   }
 
-  Widget _boardFutureBuilder() {
+  Widget _boardBuilder() {
     return FutureBuilder(
         future: Future.wait([futureLists, futureTasks]),
         builder: (context, snapshot) {
@@ -85,15 +118,21 @@ class _BoardViewState extends State<BoardView> {
             throw snapshot.error!;
             return Text('Error: ${snapshot.error}');
           } else if (snapshot.data != null) {
-            return _buildBoard(snapshot.data![0] as List<BoardList>,
+            return _board(snapshot.data![0] as List<BoardList>,
                 snapshot.data![1] as List<Task>);
           }
           return const SizedBox.shrink();
         });
   }
 
-  Widget _buildBoard(List<BoardList> lists, List<Task> tasks) {
+  Widget _board(List<BoardList> lists, List<Task> tasks) {
     controller.clear();
+    taskMap = {};
+    for (BoardList list in lists) {
+      List<Task> taskInList =
+          tasks.where((element) => element.listId == list.id).toList();
+      taskMap[list.id] = taskInList;
+    }
     final config = AppFlowyBoardConfig(
       groupBackgroundColor: HexColor.fromHex('#F7F8FC'),
       stretchGroupHeight: false,
@@ -103,9 +142,7 @@ class _BoardViewState extends State<BoardView> {
           id: list.id.toString(),
           name: list.name,
           items: <AppFlowyGroupItem>[
-            for (Task task
-                in tasks.where((element) => element.listId == list.id))
-              TextItem(task)
+            for (Task task in taskMap[list.id]!) RichTextItem(task: task)
           ]);
       controller.addGroup(group);
     }
@@ -118,7 +155,7 @@ class _BoardViewState extends State<BoardView> {
             child: _buildCard(groupItem),
           );
         },
-        boardScrollController: boardController,
+        boardScrollController: boardScrollController,
         footerBuilder: (context, columnData) {
           return AppFlowyGroupFooter(
             icon: const Icon(Icons.add, size: 20),
@@ -126,7 +163,7 @@ class _BoardViewState extends State<BoardView> {
             height: 50,
             margin: config.footerPadding,
             onAddButtonClick: () async {
-              boardController.scrollToBottom(columnData.id);
+              boardScrollController.scrollToBottom(columnData.id);
               _createTaskDialog(int.parse(columnData.id));
               _refreshBoard();
             },
@@ -172,25 +209,17 @@ class _BoardViewState extends State<BoardView> {
   }
 
   Widget _buildCard(AppFlowyGroupItem item) {
-    if (item is TextItem) {
-      return InkWell(
-        onTap: () {
-          Navigator.pushNamed(context, '/task', arguments: item.task);
-        },
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-            child: Text(item.task.title),
-          ),
-        ),
-      );
-    }
-
     if (item is RichTextItem) {
-      return RichTextCard(item: item);
+      return InkWell(
+          onTap: () async {
+            await Navigator.pushNamed(context, '/task',
+                arguments: TaskViewArguments(workspace!, item.task));
+            setState(() {});
+          },
+          child: RichTextCard(
+            item: item,
+          ));
     }
-
     throw UnimplementedError();
   }
 
@@ -349,10 +378,18 @@ class _BoardViewState extends State<BoardView> {
   }
 
   _refreshBoard() {
-    setState(() {
-      futureLists = RepositoryManager().listRepository.getAllLists(board!.id!);
-      futureTasks = RepositoryManager().taskRepository.getAllTasks(board!.id!);
-    });
+    setState(() {});
+  }
+
+  void _moveTaskToList(
+      String fromGroupId, int fromIndex, String toGroupId, int toIndex) async {
+    Task task = taskMap[int.parse(fromGroupId)]![fromIndex];
+    debugPrint('${task.title} moved from $fromGroupId to $toGroupId:$toIndex');
+    String? message = await RepositoryManager()
+        .taskRepository
+        .moveTaskToList(task.id!, int.parse(toGroupId));
+    if (context.mounted && message != null) snackBar(context, message);
+    _refreshBoard();
   }
 }
 
@@ -376,6 +413,7 @@ class _RichTextCardState extends State<RichTextCard> {
 
   @override
   Widget build(BuildContext context) {
+    final DateFormat formatter = DateFormat('yyyy-MM-dd');
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
@@ -388,11 +426,12 @@ class _RichTextCardState extends State<RichTextCard> {
               style: const TextStyle(fontSize: 14),
               textAlign: TextAlign.left,
             ),
-            const SizedBox(height: 10),
-            Text(
-              widget.item.task.dueDate.toString(),
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            )
+            if (widget.item.task.dueDate != null) const SizedBox(height: 10),
+            if (widget.item.task.dueDate != null)
+              Text(
+                formatter.format(widget.item.task.dueDate!),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              )
           ],
         ),
       ),
@@ -416,13 +455,4 @@ class RichTextItem extends AppFlowyGroupItem {
 
   @override
   String get id => task.title;
-}
-
-extension HexColor on Color {
-  static Color fromHex(String hexString) {
-    final buffer = StringBuffer();
-    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
-    buffer.write(hexString.replaceFirst('#', ''));
-    return Color(int.parse(buffer.toString(), radix: 16));
-  }
 }

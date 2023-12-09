@@ -5,6 +5,7 @@ import 'package:task_master/presentation/views/board_view.dart';
 import 'package:task_master/presentation/views/home_view.dart';
 import 'package:task_master/presentation/views/login_view.dart';
 import 'package:task_master/presentation/views/sign_up_view.dart';
+import 'package:task_master/presentation/views/task_assignment_view.dart';
 import 'package:task_master/presentation/views/task_view.dart';
 import 'package:url_strategy/url_strategy.dart';
 
@@ -48,6 +49,7 @@ class Home extends StatelessWidget {
         '/signup': (context) => const SignupView(),
         '/board': (context) => const BoardView(),
         '/task': (context) => const TaskView(),
+        '/task_assignment': (context) => const TaskAssignmentView(),
       },
     );
   }

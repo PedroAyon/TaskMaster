@@ -45,8 +45,6 @@ def rename_workspace(current_user):
     workspace = Workspace.query.filter_by(id=workspace_id).first()
     if not workspace:
         return jsonify({'message': 'Workspace does not exist !!'}), 400
-    if workspace.created_by != current_user.id:
-        return jsonify({'message': 'Current user is not the creator of this workspace !!'}), 403
 
     workspace.name = new_name
     db.session.commit()

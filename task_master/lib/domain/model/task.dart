@@ -15,6 +15,7 @@ class Task {
       description: json['description'],
       dueDate: json['due_date'] != null? DateTime.parse(json['due_date']) : null,
     );
+    print(task.dueDate);
     return task;
   }
 

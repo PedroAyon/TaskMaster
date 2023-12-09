@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import jsonify, request
 
 from core import app
@@ -18,7 +20,7 @@ def get_tasks(current_user):
 
     task_details = [
         {'id': task.id, 'list_id': task.list_id, 'title': task.title, 'description': task.description,
-         'due_date': task.due_date} for task in task_list]
+         'due_date': fromDate(task.due_date)} for task in task_list]
 
     return jsonify(task_details)
 
@@ -30,7 +32,7 @@ def create_task(current_user):
     list_id = data.get('list_id')
     title = data.get('title')
     description = data.get('description')
-    due_date = data.get('due_date')
+    due_date = toDate(data.get('due_date'))
 
     if not list_id or not title:
         return jsonify({'message': 'list_id and title are required !'}), 400
@@ -49,7 +51,7 @@ def update_task(current_user):
     task_id = data.get('id')
     title = data.get('title')
     description = data.get('description')
-    due_date = data.get('due_date')
+    due_date = toDate(data.get('due_date'))
 
     if not task_id or not title:
         return jsonify({'message': 'task_id and title are required !'}), 400
@@ -101,7 +103,7 @@ def get_board_tasks(current_user):
         return jsonify({'message': 'Board does not exists.'}), 400
 
     board_workspace_check = Member.query.join(Workspace).filter(Workspace.id == board.workspace_id,
-                                                            Member.user_id == current_user.id).first()
+                                                                Member.user_id == current_user.id).first()
     if not board_workspace_check:
         return jsonify({'message': 'You do not have permission to get tasks in this board.'}), 403
 
@@ -115,7 +117,7 @@ def get_board_tasks(current_user):
             'list_id': task.list_id,
             'title': task.title,
             'description': task.description,
-            'due_date': task.due_date
+            'due_date': fromDate(task.due_date)
         }
         for task in tasks]
 
@@ -130,14 +132,7 @@ def move_task_to_list(current_user):
     move_to_list_id = data.get('list_id')
 
     if not task_id or not move_to_list_id:
-        return jsonify({'message': 'task_id and move_to_list_id are required !'}), 400
-
-    # Check if the current user has permission to move tasks within the board's workspace
-    task_workspace_check = Task.query.join(BoardList, Member).filter(Task.id == task_id,
-                                                                     BoardList.id == move_to_list_id,
-                                                                     Member.user_id == current_user.id).first()
-    if not task_workspace_check:
-        return jsonify({'message': 'You do not have permission to move tasks in this board.'}), 403
+        return jsonify({'message': 'id and list_id are required !'}), 400
 
     # Get the task to be moved
     task_to_move = Task.query.filter_by(id=task_id).first()
@@ -151,3 +146,15 @@ def move_task_to_list(current_user):
     db.session.commit()
 
     return jsonify({'message': 'Task moved successfully'}), 200
+
+
+def toDate(dateString):
+    if not dateString:
+        return None
+    return datetime.strptime(dateString, "%Y-%m-%d").date()
+
+
+def fromDate(date):
+    if not date:
+        return None
+    return date.strftime('%Y-%m-%d')

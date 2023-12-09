@@ -3,6 +3,7 @@ import 'package:task_master/presentation/widgets/board_grid.dart';
 import 'package:task_master/presentation/widgets/log_out_button.dart';
 import 'package:task_master/presentation/widgets/member_management.dart';
 import 'package:task_master/presentation/widgets/workspace_list.dart';
+import 'package:task_master/util/utils.dart';
 
 import '../../domain/model/board.dart';
 import '../../domain/model/workspace.dart';
@@ -16,6 +17,7 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   late Widget? mainPanel;
+  Workspace? _workspace;
 
   @override
   void initState() {
@@ -52,6 +54,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   _workspacePanel(Workspace workspace) {
+    _workspace = workspace;
     setState(() {
       mainPanel = BoardGrid(workspace: workspace, onBoardClick: _boardPanel,);
     });
@@ -64,13 +67,17 @@ class _HomeViewState extends State<HomeView> {
   }
 
   _clearMainPanel() {
+    _workspace = null;
     setState(() {
       mainPanel = const SizedBox.shrink();
     });
   }
 
-  _boardPanel(Board board) {
-    Navigator.pushNamed(context, '/board', arguments: board);
+  _boardPanel(Board board) async {
+    await Navigator.pushNamed(context, '/board', arguments: BoardViewArguments(_workspace!, board));
+    setState(() {
+      mainPanel = BoardGrid(workspace: _workspace!, onBoardClick: _boardPanel,);
+    });
   }
 
 }

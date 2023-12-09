@@ -14,17 +14,23 @@ def get_members_assigned_to_task(current_user):
     if not task_id:
         return jsonify({'message': 'task_id is required !'}), 400
 
-    assigned_members = AssignedTasks.query.filter_by(task_id=task_id).all()
-
+    assigned_members = (
+        db.session.query(Member, User)
+        .join(User, Member.user_id == User.id)
+        .join(AssignedTasks,
+              (Member.user_id == AssignedTasks.user_id) & (Member.workspace_id == AssignedTasks.workspace_id))
+        .filter(AssignedTasks.task_id == task_id)
+        .all()
+    )
     member_details = [
         {
-            'user_id': assigned_member.user_id,
-            'workspace_id': assigned_member.workspace_id,
-            'role': assigned_member.role,
-            'name': User.query.filter_by(id=assigned_member.user_id).first().name,
-            'email': User.query.filter_by(id=assigned_member.user_id).first().email,
+            'user_id': member.user_id,
+            'workspace_id': member.workspace_id,
+            'role': member.role,
+            'name': user.name,
+            'email': user.email,
         }
-        for assigned_member in assigned_members]
+        for member, user in assigned_members]
 
     return jsonify(member_details)
 

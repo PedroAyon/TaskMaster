@@ -28,7 +28,7 @@ packages:
   appflowy_editor:
     dependency: "direct main"
     description:
-      path: "/Users/pedroayon/dev/appflowy-editor"
+      path: "C:/Users/pedro/Dev/appflowy-editor"
       relative: false
     source: path
     version: "2.0.0"

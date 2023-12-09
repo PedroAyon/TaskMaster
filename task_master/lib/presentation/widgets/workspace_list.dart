@@ -30,14 +30,9 @@ class _WorkspaceListState extends State<WorkspaceList> {
   late Future<User?> user;
 
   @override
-  void initState() {
-    super.initState();
+  Widget build(BuildContext context) {
     workspaceList = RepositoryManager().workspaceRepository.getWorkspaceList();
     user = RepositoryManager().authRepository.getUser();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(240, 240, 240, 1),
       body: Column(
@@ -58,7 +53,7 @@ class _WorkspaceListState extends State<WorkspaceList> {
                 future: Future.wait([workspaceList, user]),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
-                    return const CircularProgressIndicator();
+                    return const Center(child: CircularProgressIndicator(),);
                   }
                   if (snapshot.hasError || snapshot.data == null) {
                     return const Center(child: Text('Something went wrong'));
@@ -166,8 +161,8 @@ class _WorkspaceListState extends State<WorkspaceList> {
 
   _refreshWorkspaceList() {
     setState(() {
-      workspaceList =
-          RepositoryManager().workspaceRepository.getWorkspaceList();
+      // workspaceList =
+      //     RepositoryManager().workspaceRepository.getWorkspaceList();
     });
     widget.clearMainPanel();
   }

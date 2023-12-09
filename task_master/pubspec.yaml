@@ -40,7 +40,7 @@ dependencies:
   localstorage: ^4.0.1+4
   url_strategy: ^0.2.0
   appflowy_editor:
-    path: /Users/pedroayon/dev/appflowy-editor
+    path: C:/Users/pedro/Dev/appflowy-editor
 
 dev_dependencies:
   flutter_test:

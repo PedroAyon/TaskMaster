@@ -7,5 +7,5 @@ Widget logOutIconButton(BuildContext context) {
     if (context.mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
-  }, icon: const Icon(Icons.logout));
+  }, icon: const Icon(Icons.logout), tooltip: 'Cerrar sesión',);
 }
