@@ -23,6 +23,18 @@ extension HexColor on Color {
   }
 }
 
+String dateFormatted(DateTime date) {
+  return '${date.year}-${date.month}-${date.day}';
+}
+
+
+extension DateOnlyCompare on DateTime {
+  bool isSameDate(DateTime other) {
+    return year == other.year && month == other.month
+        && day == other.day;
+  }
+}
+
 class BoardViewArguments {
   final Workspace workspace;
   final Board board;
@@ -42,4 +54,8 @@ class TaskAssignmentViewArguments {
   final Task task;
 
   TaskAssignmentViewArguments(this.workspace, this.task);
+}
+
+void main() {
+  print(dateFormatted(DateTime.now()));
 }

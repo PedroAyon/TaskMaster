@@ -5,6 +5,7 @@ from flask import jsonify, request
 from core import app
 from core.models import db, Task, BoardList, Member, Board, Workspace
 from routes.auth import token_required
+from utils import from_date, to_date
 
 
 @app.route('/task/list/all', methods=['GET'])
@@ -20,7 +21,7 @@ def get_tasks(current_user):
 
     task_details = [
         {'id': task.id, 'list_id': task.list_id, 'title': task.title, 'description': task.description,
-         'due_date': fromDate(task.due_date)} for task in task_list]
+         'due_date': from_date(task.due_date)} for task in task_list]
 
     return jsonify(task_details)
 
@@ -32,7 +33,7 @@ def create_task(current_user):
     list_id = data.get('list_id')
     title = data.get('title')
     description = data.get('description')
-    due_date = toDate(data.get('due_date'))
+    due_date = to_date(data.get('due_date'))
 
     if not list_id or not title:
         return jsonify({'message': 'list_id and title are required !'}), 400
@@ -51,7 +52,7 @@ def update_task(current_user):
     task_id = data.get('id')
     title = data.get('title')
     description = data.get('description')
-    due_date = toDate(data.get('due_date'))
+    due_date = to_date(data.get('due_date'))
 
     if not task_id or not title:
         return jsonify({'message': 'task_id and title are required !'}), 400
@@ -63,6 +64,7 @@ def update_task(current_user):
     existing_task.title = title
     existing_task.description = description
     existing_task.due_date = due_date
+    print(f'aaaaa {due_date}')
 
     db.session.commit()
 
@@ -117,7 +119,7 @@ def get_board_tasks(current_user):
             'list_id': task.list_id,
             'title': task.title,
             'description': task.description,
-            'due_date': fromDate(task.due_date)
+            'due_date': from_date(task.due_date)
         }
         for task in tasks]
 
@@ -146,15 +148,3 @@ def move_task_to_list(current_user):
     db.session.commit()
 
     return jsonify({'message': 'Task moved successfully'}), 200
-
-
-def toDate(dateString):
-    if not dateString:
-        return None
-    return datetime.strptime(dateString, "%Y-%m-%d").date()
-
-
-def fromDate(date):
-    if not date:
-        return None
-    return date.strftime('%Y-%m-%d')

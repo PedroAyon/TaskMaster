@@ -1,8 +1,10 @@
 import 'package:appflowy_board/appflowy_board.dart';
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:task_master/domain/model/board.dart';
 import 'package:task_master/domain/model/task.dart';
 import 'package:task_master/presentation/RepositoryManager.dart';
+import 'package:task_master/presentation/widgets/assigned_members_widget.dart';
 import 'package:task_master/presentation/widgets/not_found_page.dart';
 import 'package:intl/intl.dart';
 
@@ -25,11 +27,13 @@ class _BoardViewState extends State<BoardView> {
   late Future<List<BoardList>> futureLists;
   late Future<List<Task>> futureTasks;
   Map<int, List<Task>> taskMap = {};
+  DateTime? leftDateFilter;
+  DateTime? rightDateFilter;
+  bool personalTasksFilter = false;
   final _newListFormKey = GlobalKey<FormState>();
   final TextEditingController _newListController = TextEditingController();
   final _newTaskFormKey = GlobalKey<FormState>();
   final TextEditingController _newTaskController = TextEditingController();
-  bool filtered = false;
 
   @override
   void initState() {
@@ -49,7 +53,10 @@ class _BoardViewState extends State<BoardView> {
   @override
   Widget build(BuildContext context) {
     final args =
-        ModalRoute.of(context)!.settings.arguments as BoardViewArguments?;
+    ModalRoute
+        .of(context)!
+        .settings
+        .arguments as BoardViewArguments?;
     workspace = args?.workspace;
     board = args?.board;
     return board != null ? view() : const NotFoundPage();
@@ -57,37 +64,97 @@ class _BoardViewState extends State<BoardView> {
 
   Widget view() {
     futureLists = RepositoryManager().listRepository.getAllLists(board!.id!);
-    futureTasks = RepositoryManager().taskRepository.getAllTasks(board!.id!);
+    if (personalTasksFilter) {
+      futureTasks = RepositoryManager()
+          .taskAssignmentRepository
+          .getTasksAssignedToMember(workspace!.id!, board!.id!, null);
+    } else {
+      futureTasks = RepositoryManager().taskRepository.getAllTasks(board!.id!);
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(board!.name),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .inversePrimary,
         actions: [
-          IconButton(onPressed: () async {
-            await RepositoryManager().boardRepository.deleteBoard(board!.id!);
-            if (context.mounted) Navigator.pop(context); // Navigate back when button is pressed
-          }, icon: const Icon(Icons.delete)),
-          const SizedBox(width: 8,),
+          const SizedBox(
+            width: 8,
+          ),
+          PopupMenuButton(
+            tooltip: 'Filtrar',
+            icon: const Icon(Icons.filter_alt_outlined),
+            onSelected: (String item) {
+              switch (item) {
+                case 'all_tasks':
+                  setState(() {
+                    personalTasksFilter = false;
+                  });
+                case 'assigned_to_me':
+                  setState(() {
+                    personalTasksFilter = true;
+                  });
+                case 'by_date':
+                  _showDatePicker();
+              }
+            },
+            itemBuilder: (BuildContext context) =>
+            <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: 'all_tasks',
+                child: Row(
+                  children: [
+                    if (!personalTasksFilter) _appliedFilterIcon(),
+                    const Text('Todos las tareas'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'assigned_to_me',
+                child: Row(
+                  children: [
+                    if (personalTasksFilter) _appliedFilterIcon(),
+                    const Text('Asignadas a mí'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'by_date',
+                child: Row(
+                  children: [
+                    if (leftDateFilter != null) _appliedFilterIcon(),
+                    const Text('Por fecha')
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(
+            width: 8,
+          ),
           InkWell(
             onTap: () {
-              setState(() {
-                filtered = !filtered;
-              });
+              snackBar(context, 'Manten presionado para borrar');
             },
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Text(filtered ? 'Tareas asignadas a mí' : 'Todas las tareas'),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.filter_alt_outlined,
-                    color: Colors.black,
-                  ),
-                ],
+            onLongPress: () async {
+              await RepositoryManager()
+                  .boardRepository
+                  .deleteBoard(board!.id!);
+              if (context.mounted) {
+                Navigator.pop(
+                    context); // Navigate back when button is pressed
+              }
+            },
+            child: Ink(
+              child: const Icon(
+                Icons.delete,
               ),
             ),
-          )
+          ),
+          const SizedBox(
+            width: 8,
+          ),
         ],
       ),
       body: Container(
@@ -113,7 +180,7 @@ class _BoardViewState extends State<BoardView> {
         future: Future.wait([futureLists, futureTasks]),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             throw snapshot.error!;
             return Text('Error: ${snapshot.error}');
@@ -129,8 +196,15 @@ class _BoardViewState extends State<BoardView> {
     controller.clear();
     taskMap = {};
     for (BoardList list in lists) {
-      List<Task> taskInList =
-          tasks.where((element) => element.listId == list.id).toList();
+      List<Task> taskInList = tasks.where((task) {
+        if (task.listId != list.id) return false;
+        if (leftDateFilter != null && rightDateFilter != null) {
+          if (task.dueDate == null) return false;
+          if (task.dueDate!.compareTo(leftDateFilter!) == -1 ||
+              task.dueDate!.compareTo(rightDateFilter!) == 1) return false;
+        }
+        return true;
+      }).toList();
       taskMap[list.id] = taskInList;
     }
     final config = AppFlowyBoardConfig(
@@ -186,7 +260,7 @@ class _BoardViewState extends State<BoardView> {
               ),
             ),
             title: SizedBox(
-              width: 150,
+              width: 190,
               child: TextField(
                 controller: TextEditingController()
                   ..text = columnData.headerData.groupName,
@@ -204,7 +278,7 @@ class _BoardViewState extends State<BoardView> {
             margin: config.headerPadding,
           );
         },
-        groupConstraints: const BoxConstraints.tightFor(width: 280),
+        groupConstraints: const BoxConstraints.tightFor(width: 320),
         config: config);
   }
 
@@ -226,7 +300,8 @@ class _BoardViewState extends State<BoardView> {
   _createListDialog() {
     showDialog<String>(
         context: context,
-        builder: (BuildContext context) => AlertDialog(
+        builder: (BuildContext context) =>
+            AlertDialog(
               content: Form(
                 key: _newListFormKey,
                 child: Column(
@@ -245,7 +320,10 @@ class _BoardViewState extends State<BoardView> {
                           border: const OutlineInputBorder(),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.primary,
+                                color: Theme
+                                    .of(context)
+                                    .colorScheme
+                                    .primary,
                                 width: 2.0),
                           )),
                     ),
@@ -255,7 +333,10 @@ class _BoardViewState extends State<BoardView> {
               actions: <Widget>[
                 TextButton(
                   style: TextButton.styleFrom(
-                    textStyle: Theme.of(context).textTheme.labelLarge,
+                    textStyle: Theme
+                        .of(context)
+                        .textTheme
+                        .labelLarge,
                   ),
                   child: const Text('Cancelar'),
                   onPressed: () {
@@ -264,7 +345,10 @@ class _BoardViewState extends State<BoardView> {
                 ),
                 TextButton(
                   style: TextButton.styleFrom(
-                    textStyle: Theme.of(context).textTheme.labelLarge,
+                    textStyle: Theme
+                        .of(context)
+                        .textTheme
+                        .labelLarge,
                   ),
                   onPressed: () async {
                     _createList();
@@ -278,7 +362,8 @@ class _BoardViewState extends State<BoardView> {
   _createTaskDialog(int listId) {
     showDialog<String>(
         context: context,
-        builder: (BuildContext context) => AlertDialog(
+        builder: (BuildContext context) =>
+            AlertDialog(
               content: Form(
                 key: _newTaskFormKey,
                 child: Column(
@@ -297,7 +382,10 @@ class _BoardViewState extends State<BoardView> {
                           border: const OutlineInputBorder(),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.primary,
+                                color: Theme
+                                    .of(context)
+                                    .colorScheme
+                                    .primary,
                                 width: 2.0),
                           )),
                     ),
@@ -307,7 +395,10 @@ class _BoardViewState extends State<BoardView> {
               actions: <Widget>[
                 TextButton(
                   style: TextButton.styleFrom(
-                    textStyle: Theme.of(context).textTheme.labelLarge,
+                    textStyle: Theme
+                        .of(context)
+                        .textTheme
+                        .labelLarge,
                   ),
                   child: const Text('Cancelar'),
                   onPressed: () {
@@ -316,7 +407,10 @@ class _BoardViewState extends State<BoardView> {
                 ),
                 TextButton(
                   style: TextButton.styleFrom(
-                    textStyle: Theme.of(context).textTheme.labelLarge,
+                    textStyle: Theme
+                        .of(context)
+                        .textTheme
+                        .labelLarge,
                   ),
                   onPressed: () async {
                     _createTask(listId);
@@ -365,7 +459,7 @@ class _BoardViewState extends State<BoardView> {
 
   _deleteList(int listId) async {
     String? message =
-        await RepositoryManager().listRepository.deleteList(listId);
+    await RepositoryManager().listRepository.deleteList(listId);
     if (context.mounted) {
       if (message != null) {
         snackBar(context, message);
@@ -381,8 +475,8 @@ class _BoardViewState extends State<BoardView> {
     setState(() {});
   }
 
-  void _moveTaskToList(
-      String fromGroupId, int fromIndex, String toGroupId, int toIndex) async {
+  void _moveTaskToList(String fromGroupId, int fromIndex, String toGroupId,
+      int toIndex) async {
     Task task = taskMap[int.parse(fromGroupId)]![fromIndex];
     debugPrint('${task.title} moved from $fromGroupId to $toGroupId:$toIndex');
     String? message = await RepositoryManager()
@@ -390,6 +484,70 @@ class _BoardViewState extends State<BoardView> {
         .moveTaskToList(task.id!, int.parse(toGroupId));
     if (context.mounted && message != null) snackBar(context, message);
     _refreshBoard();
+  }
+
+  _showDatePicker() {
+    showDialog<String>(
+        context: context,
+        builder: (BuildContext context) =>
+            AlertDialog(
+              content: Container(
+                width: 400,
+                child: SfDateRangePicker(
+                  view: DateRangePickerView.month,
+                  selectionMode: DateRangePickerSelectionMode.range,
+                  onSelectionChanged:
+                      (DateRangePickerSelectionChangedArgs args) async {
+                    if (args.value is PickerDateRange) {
+                      leftDateFilter = args.value.startDate;
+                      rightDateFilter = args.value.endDate;
+                    }
+                  },
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  style: TextButton.styleFrom(
+                    textStyle: Theme
+                        .of(context)
+                        .textTheme
+                        .labelLarge,
+                  ),
+                  onPressed: () async {
+                    setState(() {
+                      leftDateFilter = null;
+                      rightDateFilter = null;
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    'Limpiar filtro',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    textStyle: Theme
+                        .of(context)
+                        .textTheme
+                        .labelLarge,
+                  ),
+                  onPressed: () async {
+                    setState(() {});
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    'Aceptar',
+                  ),
+                ),
+              ],
+            ));
+  }
+
+  Widget _appliedFilterIcon() {
+    return const Padding(
+        padding: EdgeInsets.only(right: 8),
+        child: Icon(Icons.check, color: Colors.green));
   }
 }
 
@@ -414,6 +572,14 @@ class _RichTextCardState extends State<RichTextCard> {
   @override
   Widget build(BuildContext context) {
     final DateFormat formatter = DateFormat('yyyy-MM-dd');
+    DateTime? date = widget.item.task.dueDate;
+    Color? color;
+    if (date != null) {
+      color = (date.compareTo(DateTime.now()) == -1 &&
+          !date.isSameDate(DateTime.now())
+          ? Colors.red
+          : Colors.grey);
+    }
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
@@ -423,15 +589,33 @@ class _RichTextCardState extends State<RichTextCard> {
           children: [
             Text(
               widget.item.task.title,
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 16),
               textAlign: TextAlign.left,
             ),
-            if (widget.item.task.dueDate != null) const SizedBox(height: 10),
-            if (widget.item.task.dueDate != null)
-              Text(
-                formatter.format(widget.item.task.dueDate!),
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              )
+            const SizedBox(height: 10),
+            if (date != null)
+              InkWell(
+                hoverColor: color,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 16,
+                      color: color,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      formatter.format(date),
+                      style: TextStyle(fontSize: 16, color: color),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 10),
+            AssignedMembersWidget(
+                taskId: widget.item.task.id!,
+                cardView: true,
+                onTapCallback: () {})
           ],
         ),
       ),

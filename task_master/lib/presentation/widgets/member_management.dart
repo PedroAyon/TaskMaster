@@ -152,7 +152,7 @@ class _MemberManagementState extends State<MemberManagement> {
         future: members,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const CircularProgressIndicator();
+            return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || snapshot.data == null) {
             return const Center(child: Text('Something went wrong'));

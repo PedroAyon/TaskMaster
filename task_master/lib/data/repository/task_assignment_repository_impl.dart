@@ -51,13 +51,12 @@ class TaskAssignmentRepositoryImpl implements TaskAssignmentRepository {
 
   @override
   Future<List<Task>> getTasksAssignedToMember(
-      int userId, int workspaceId, int? boardId) async {
-    Map<String, String> data = {
-      'user_id': userId.toString(),
-      'workspace_id': workspaceId.toString()
-    };
+      int workspaceId, int? boardId, int? userId) async {
+    Map<String, String> data = {'workspace_id': workspaceId.toString()};
+    if (userId != null) data['user_id'] = userId.toString();
     if (boardId != null) data['board_id'] = boardId.toString();
-    final response = await http.get(Uri.http(domain, '/assigned_tasks/tasks', data),
+    final response = await http.get(
+        Uri.http(domain, '/assigned_tasks/tasks', data),
         headers: await _headers());
     Iterable responseBody = json.decode(response.body);
     List<Task> tasks =

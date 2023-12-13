@@ -1,8 +1,9 @@
 from flask import jsonify, request
 
 from core import app
-from core.models import db, AssignedTasks, Task, User, Member, BoardList
+from core.models import db, AssignedTasks, Task, User, Member, BoardList, Board, Workspace
 from routes.auth import token_required
+from utils import from_date
 
 
 @app.route('/assigned_tasks/members', methods=['GET'])
@@ -43,21 +44,47 @@ def get_tasks_assigned_to_member(current_user):
     workspace_id = data.get('workspace_id')
     board_id = data.get('board_id')
 
-    if not user_id or not workspace_id:
-        return jsonify({'message': 'user_id and workspace_id are required !'}), 400
+    if not user_id:
+        user_id = current_user.id
+
+    if not workspace_id:
+        return jsonify({'message': 'workspace_id are required !'}), 400
 
     if not board_id:
-        assigned_tasks = AssignedTasks.query.filter_by(user_id=user_id, workspace_id=workspace_id).all()
-    else:
-        assigned_tasks = AssignedTasks.query.join(Task).filter_by(Task.id == AssignedTasks.task_id).join(
-            BoardList).filter_by(BoardList.id == Task.list_id)
+        assigned_tasks_for_user = (
+            db.session.query(Task, BoardList, Board, Workspace)
+            .join(BoardList, Task.list_id == BoardList.id)
+            .join(Board, BoardList.board_id == Board.id)
+            .join(Workspace, Board.workspace_id == Workspace.id)
+            .join(AssignedTasks, Task.id == AssignedTasks.task_id)
+            .filter(
+                AssignedTasks.user_id == user_id,
+                Board.workspace_id == workspace_id,
+            )
+            .all()
+        )
+    else :
+        assigned_tasks_for_user = (
+            db.session.query(Task, BoardList, Board, Workspace)
+            .join(BoardList, Task.list_id == BoardList.id)
+            .join(Board, BoardList.board_id == Board.id)
+            .join(Workspace, Board.workspace_id == Workspace.id)
+            .join(AssignedTasks, Task.id == AssignedTasks.task_id)
+            .filter(
+                AssignedTasks.user_id == user_id,
+                Board.workspace_id == workspace_id,
+                Board.id == board_id
+            )
+            .all()
+        )
 
     task_details = [
-        {'id': assigned_task.task_id, 'list_id': Task.query.filter_by(id=assigned_task.task_id).first().list_id,
-         'title': Task.query.filter_by(id=assigned_task.task_id).first().title,
-         'description': Task.query.filter_by(id=assigned_task.task_id).first().description,
-         'due_date': Task.query.filter_by(id=assigned_task.task_id).first().due_date} for assigned_task in
-        assigned_tasks]
+        {'id': task.id,
+         'list_id': task.list_id,
+         'title': task.title,
+         'description': task.description,
+         'due_date': from_date(task.due_date)} for task, board_list, board, workspace in
+        assigned_tasks_for_user]
 
     return jsonify(task_details)
 

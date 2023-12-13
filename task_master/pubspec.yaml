@@ -41,6 +41,7 @@ dependencies:
   url_strategy: ^0.2.0
   appflowy_editor:
     path: C:/Users/pedro/Dev/appflowy-editor
+  syncfusion_flutter_datepicker: ^23.2.7
 
 dev_dependencies:
   flutter_test:

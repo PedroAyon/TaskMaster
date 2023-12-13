@@ -60,7 +60,7 @@ class _TaskAssignmentViewState extends State<TaskAssignmentView> {
               } else if (snapshot.hasError) {
                 return const Center(child: Text('Something went wrong'));
               }
-              return const CircularProgressIndicator();
+              return const Center(child: CircularProgressIndicator());
             }));
   }
 
@@ -80,11 +80,10 @@ class _TaskAssignmentViewState extends State<TaskAssignmentView> {
             ),
           ),
         ),
-        Expanded(
-            child: ListView(shrinkWrap: true, children: [
+        ListView(shrinkWrap: true, children: [
           for (MemberDetails member in assignedMembers)
             _memberListTile(member, true)
-        ])),
+        ]),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),

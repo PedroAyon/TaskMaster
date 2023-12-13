@@ -58,7 +58,7 @@ class _BoardGridState extends State<BoardGrid> {
         future: boards,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const CircularProgressIndicator();
+            return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || snapshot.data == null) {
             return const Center(child: Text('Something went wrong'));
