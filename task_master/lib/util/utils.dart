@@ -27,11 +27,9 @@ String dateFormatted(DateTime date) {
   return '${date.year}-${date.month}-${date.day}';
 }
 
-
 extension DateOnlyCompare on DateTime {
   bool isSameDate(DateTime other) {
-    return year == other.year && month == other.month
-        && day == other.day;
+    return year == other.year && month == other.month && day == other.day;
   }
 }
 
@@ -54,8 +52,4 @@ class TaskAssignmentViewArguments {
   final Task task;
 
   TaskAssignmentViewArguments(this.workspace, this.task);
-}
-
-void main() {
-  print(dateFormatted(DateTime.now()));
 }

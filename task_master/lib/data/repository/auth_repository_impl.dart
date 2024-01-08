@@ -20,8 +20,7 @@ class AuthRepositoryImpl implements AuthRepository {
     var data = <String, dynamic>{};
     data['email'] = email;
     data['password'] = password;
-    final response =
-        await http.post(Uri.parse(_logInURL), body: data);
+    final response = await http.post(Uri.parse(_logInURL), body: data);
     var responseBody = json.decode(response.body);
     if (!response.statusCode.isStatusOk()) return responseBody['message'];
     await saveJWT(responseBody['token']);
@@ -40,8 +39,7 @@ class AuthRepositoryImpl implements AuthRepository {
     data['email'] = email;
     data['name'] = name;
     data['password'] = password;
-    final response =
-        await http.post(Uri.parse(_signUpURL), body: data);
+    final response = await http.post(Uri.parse(_signUpURL), body: data);
     if (!response.statusCode.isStatusOk()) {
       var responseBody = json.decode(response.body);
       return responseBody['message'];
@@ -52,7 +50,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<String?> getJWT() async {
     await _storage.ready;
-    return  _storage.getItem('jwt');
+    return _storage.getItem('jwt');
   }
 
   @override
@@ -69,25 +67,8 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<User?> getUser() async {
     if (!await userLoggedIn()) return null;
-    final response = await http.get(Uri.parse(_userURL), headers: {
-      'taskmaster-access-token':
-      await getJWT() ?? ''
-    });
+    final response = await http.get(Uri.parse(_userURL),
+        headers: {'taskmaster-access-token': await getJWT() ?? ''});
     return User.fromJson(json.decode(response.body));
   }
-}
-
-void main() async {
-  debugPrint("AUTH DEBUG");
-  var repo = AuthRepositoryImpl();
-  String? message = await repo.logIn('pedroayonb@gmail.com', 'pjab260803');
-  if (message == null) {
-    debugPrint(await repo.getJWT());
-  } else {
-    debugPrint(message);
-  }
-  User? user = await repo.getUser();
-  if (user == null) debugPrint('User is null!');
-  debugPrint('${user!.id}, ${user.name}');
-  await repo.logOut();
 }
